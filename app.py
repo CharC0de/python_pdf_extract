@@ -24,22 +24,81 @@ def allowed_file(filename):
 # Schedule parsing function
 
 
-def split_after_first_am_pm(schedule_text):
+def preprocess_schedule_text(schedule_text):
     """
-    Splits a schedule string into two parts after detecting the first 'AM' or 'PM'.
-    Returns an array of the split parts.
+    Preprocess schedule_text to correct minor formatting errors and normalize to
+    the format: "{day/s} {time-start}-{time-end}".
     """
-    array = []  # Initialize an empty list
-    match = re.search(r'(AM|PM)\s', schedule_text)
+    # Remove unwanted extra spaces or inconsistent formatting
+    schedule_text = re.sub(
+        r'\s+', ' ', schedule_text.strip())  # Normalize spaces
+    # Ensure space after AM/PM
+    schedule_text = re.sub(r'([APap][Mm])(\d)', r'\1 \2', schedule_text)
+    # Ensure space before AM/PM
+    schedule_text = re.sub(r'(\d)([APap][Mm])', r'\1 \2', schedule_text)
+    # Ensure space around dash
+    schedule_text = re.sub(r'(\d)-(\d)', r'\1 - \2', schedule_text)
+    # Ensure space after time
+    schedule_text = re.sub(
+        r'(\d{1,2}:\d{2})([^\s-])', r'\1 - \2', schedule_text)
+
+    # Handle common formatting issues
+    pattern = r"([A-Z]+)\s*((\d{1,2}:\d{2}\s*[APap][Mm])-?(\d{1,2}:\d{2}\s*[APap][Mm]))"
+    match = re.match(pattern, schedule_text)
     if match:
-        split_index = match.end()
-        first_part = schedule_text[:split_index].strip()
-        second_part = schedule_text[split_index:].strip()
-        array.extend([first_part, second_part])  # Add both parts to the array
-    else:
-        # Add the whole string to the array
-        array.append(schedule_text.strip())
-    return array
+        days, times = match.groups()[:2]
+        return f"{days} {times}"
+    return schedule_text
+
+
+def split_same_time_diff_day(schedule_text: str) -> list:
+    """
+    Splits a schedule string into separate schedules if multiple days are present with the same time.
+    For example:
+        "TTH 9:30 AM-12:00 PM" -> ["T 9:30 AM-12:00 PM", "TH 9:30 AM-12:00 PM"]
+    """
+    # Preprocess to normalize spacing
+    # Normalize extra spaces
+    schedule_text = re.sub(r'\s+', ' ', schedule_text.strip())
+
+    # Updated regex to allow flexible spacing
+    pattern = r"([A-Z]+)\s+(\d{1,2}:\d{2}\s*[APap][Mm]\s*-\s*\d{1,2}:\d{2}\s*[APap][Mm])"
+
+    match = re.match(pattern, schedule_text)
+    if not match:
+        return [schedule_text.strip()]  # If no match, return input as is
+
+    # Split match groups
+    days, times = match.groups()
+
+    # Break days into individual days (e.g., TTH -> T, TH)
+    day_mapping = {
+        "M": "M", "T": "T", "W": "W", "R": "TH", "F": "F",
+        "S": "S", "U": "SU"  # Add any additional mappings as needed
+    }
+    individual_days = []
+    i = 0
+    while i < len(days):
+        # Handle "TH" (two-character day)
+        if days[i] == "T" and i + 1 < len(days) and days[i + 1] == "H":
+            individual_days.append(day_mapping["R"])  # Map "TH"
+            i += 2  # Skip "H"
+        else:
+            individual_days.append(day_mapping.get(days[i], days[i]))
+            i += 1
+
+    # Combine each day with the time range
+    schedules = [f"{day} {times}" for day in individual_days]
+    return schedules
+
+
+def split_two_schedules(schedule: str) -> list:
+    """Splits two schedules based on the pattern where the first ends with 'M' and the second starts after spaces."""
+    pattern = r'(.*M)\s+([A-Z].*)'
+    match = re.search(pattern, schedule)
+    if match:
+        return [match.group(1), match.group(2)]
+    return [schedule]
 
 
 def parse_schedule(schedule_text):
@@ -50,13 +109,23 @@ def parse_schedule(schedule_text):
     days_times = []
 
     # Split the schedule on two or more spaces
-    schedule_parts = split_after_first_am_pm(schedule_text)
+    print(schedule_text)
+    schedule_parts = split_two_schedules(schedule_text)
     print("Split schedule into parts:", schedule_parts)  # Debugging output
 
     # Regex pattern to match day and time (e.g., "F 7:30 AM-10:00 AM")
     pattern = r'([A-Z]+)\s+(\d{1,2}:\d{2})\s?(AM|PM)?\s*-\s*(\d{1,2}:\d{2})\s?(AM|PM)?'
 
+    for index, part in enumerate(schedule_parts):
+        schedule_parts[index] = preprocess_schedule_text(part)
+        print(preprocess_schedule_text(part))
+    if len(schedule_parts) == 1:
+        print(schedule_parts)
+        schedule_parts = split_same_time_diff_day(schedule_parts[0])
+        print(schedule_parts)
+
     for part in schedule_parts:
+
         if not part.strip():  # Skip empty parts
             continue
 
@@ -72,6 +141,7 @@ def parse_schedule(schedule_text):
             })
 
     return days_times
+
 # Table extraction and parsing function
 
 

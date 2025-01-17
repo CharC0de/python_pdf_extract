@@ -16,40 +16,43 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 # Utility to check if file is PDF
+
+
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # Schedule parsing function
+
+
 def parse_schedule(schedule_text):
-    """Parses multi-line schedule strings into structured day and time components."""
     days_times = []
 
-    if not schedule_text.strip():
-        return days_times  # Return empty for blank schedules
+    # Split the schedule on two or more spaces
+    schedule_parts = re.split(r'\s{2,}', schedule_text)
 
-    schedule_lines = schedule_text.split('\n')
+    # Regex pattern to match day and time (e.g., "F 7:30 AM-10:00 AM")
+    pattern = r'([A-Z]+)\s+(\d{1,2}:\d{2})\s?(AM|PM)?\s*-\s*(\d{1,2}:\d{2})\s?(AM|PM)?'
 
-    pattern = r'([A-Z]+)\s(\d{1,2}:\d{2})\s?(AM|PM)-(\d{1,2}(:\d{2})?)\s?(AM|PM)?'
+    for part in schedule_parts:
+        if not part.strip():  # Skip empty parts
+            continue
 
-    for line in schedule_lines:
-        line = line.strip()
-        matches = re.findall(pattern, line)
-        if matches:
-            for match in matches:
-                day, start, start_period, end, _, end_period = match
-                if not end_period:
-                    end_period = start_period
-                days_times.append({
-                    "day": day,
-                    "time_start": start,
-                    "time_start_daytime": start_period,
-                    "time_end": end,
-                    "time_end_daytime": end_period
-                })
+        # Match the regex on the current part
+        matches = re.findall(pattern, part.strip())
+        for day, start, start_period, end, end_period in matches:
+            days_times.append({
+                "day": day,
+                "time_start": start,
+                "time_start_daytime": start_period,
+                "time_end": end,
+                "time_end_daytime": end_period
+            })
 
     return days_times
 
 # Table extraction and parsing function
+
+
 def extract_and_transform_table(file_path):
     # Extract tables using both lattice and stream methods
     tables_lattice = camelot.read_pdf(file_path, flavor='lattice', pages='all')
@@ -91,6 +94,8 @@ def extract_and_transform_table(file_path):
     return result
 
 # Flask route to handle PDF upload
+
+
 @app.route('/upload', methods=['POST'])
 def upload_pdf():
     if 'file' not in request.files:
@@ -118,6 +123,7 @@ def upload_pdf():
         # Clean up uploaded file
         if os.path.exists(file_path):
             os.remove(file_path)
+
 
 # Run Flask App
 if __name__ == "__main__":

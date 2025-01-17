@@ -24,11 +24,34 @@ def allowed_file(filename):
 # Schedule parsing function
 
 
+def split_after_first_am_pm(schedule_text):
+    """
+    Splits a schedule string into two parts after detecting the first 'AM' or 'PM'.
+    Returns an array of the split parts.
+    """
+    array = []  # Initialize an empty list
+    match = re.search(r'(AM|PM)\s', schedule_text)
+    if match:
+        split_index = match.end()
+        first_part = schedule_text[:split_index].strip()
+        second_part = schedule_text[split_index:].strip()
+        array.extend([first_part, second_part])  # Add both parts to the array
+    else:
+        # Add the whole string to the array
+        array.append(schedule_text.strip())
+    return array
+
+
 def parse_schedule(schedule_text):
+    """
+    Parses schedule strings into structured components.
+    Handles cases with one schedule or multiple schedules separated by spaces.
+    """
     days_times = []
 
     # Split the schedule on two or more spaces
-    schedule_parts = re.split(r'\s{2,}', schedule_text)
+    schedule_parts = split_after_first_am_pm(schedule_text)
+    print("Split schedule into parts:", schedule_parts)  # Debugging output
 
     # Regex pattern to match day and time (e.g., "F 7:30 AM-10:00 AM")
     pattern = r'([A-Z]+)\s+(\d{1,2}:\d{2})\s?(AM|PM)?\s*-\s*(\d{1,2}:\d{2})\s?(AM|PM)?'
@@ -49,7 +72,6 @@ def parse_schedule(schedule_text):
             })
 
     return days_times
-
 # Table extraction and parsing function
 
 

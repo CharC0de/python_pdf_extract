@@ -29,25 +29,27 @@ def preprocess_schedule_text(schedule_text):
     Preprocess schedule_text to correct minor formatting errors and normalize to
     the format: "{day/s} {time-start}-{time-end}".
     """
-    # Remove unwanted extra spaces or inconsistent formatting
-    schedule_text = re.sub(
-        r'\s+', ' ', schedule_text.strip())  # Normalize spaces
-    # Ensure space after AM/PM
+    # Normalize spaces
+    schedule_text = re.sub(r'\s+', ' ', schedule_text.strip())
+
+    # Ensure space before and after AM/PM
     schedule_text = re.sub(r'([APap][Mm])(\d)', r'\1 \2', schedule_text)
-    # Ensure space before AM/PM
     schedule_text = re.sub(r'(\d)([APap][Mm])', r'\1 \2', schedule_text)
+
+    # Ensure dash between times if missing
+    schedule_text = re.sub(r'(\d{1,2}:\d{2}\s*[APap][Mm])\s*(\d{1,2}:\d{2}\s*[APap][Mm])', r'\1-\2', schedule_text)
+
     # Ensure space around dash
     schedule_text = re.sub(r'(\d)-(\d)', r'\1 - \2', schedule_text)
-    # Ensure space after time
-    schedule_text = re.sub(
-        r'(\d{1,2}:\d{2})([^\s-])', r'\1 - \2', schedule_text)
 
-    # Handle common formatting issues
-    pattern = r"([A-Z]+)\s*((\d{1,2}:\d{2}\s*[APap][Mm])-?(\d{1,2}:\d{2}\s*[APap][Mm]))"
+    # Match and format the day and time range (with space in time)
+    pattern = r"([A-Z]+)\s*(\d{1,2}:\d{2}\s*[APap][Mm]\s*-\s*\d{1,2}:\d{2}\s*[APap][Mm])"
     match = re.match(pattern, schedule_text)
     if match:
-        days, times = match.groups()[:2]
-        return f"{days} {times}"
+        days, times = match.groups()
+        # Add space before AM/PM in times, only if not already present
+        times = re.sub(r'(?<!\s)([APap][Mm])', r' \1', times)
+        return f"{days} {times.strip()}"  # Remove leading/trailing spaces
     return schedule_text
 
 

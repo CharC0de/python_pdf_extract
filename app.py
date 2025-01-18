@@ -37,7 +37,8 @@ def preprocess_schedule_text(schedule_text):
     schedule_text = re.sub(r'(\d)([APap][Mm])', r'\1 \2', schedule_text)
 
     # Ensure dash between times if missing
-    schedule_text = re.sub(r'(\d{1,2}:\d{2}\s*[APap][Mm])\s*(\d{1,2}:\d{2}\s*[APap][Mm])', r'\1-\2', schedule_text)
+    schedule_text = re.sub(
+        r'(\d{1,2}:\d{2}\s*[APap][Mm])\s*(\d{1,2}:\d{2}\s*[APap][Mm])', r'\1-\2', schedule_text)
 
     # Ensure space around dash
     schedule_text = re.sub(r'(\d)-(\d)', r'\1 - \2', schedule_text)
@@ -170,6 +171,10 @@ def extract_and_transform_table(file_path):
         subject_code = row[1].strip()
         subject = row[2].replace('\n', ' ')
         section = row[3].strip()
+        lecUnits = row[4].strip()
+        labUnits = row[5].strip()
+        lecHours = row[6].strip()
+        labHours = row[7].strip()
         schedule = row[8].strip().replace('\n', ' ')
         room = row[9].replace('\n', ' ').strip()
         schedule_details = parse_schedule(schedule)
@@ -181,6 +186,10 @@ def extract_and_transform_table(file_path):
             "section": section,
             "room": room,
             "days": days,
+            "lec_units": lecUnits,
+            "lab_units": labUnits,
+            "lec_hours": lecHours,
+            "lab_hours": labHours,
             "schedule": schedule_details
         }
         result.append(course)

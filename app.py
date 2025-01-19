@@ -177,6 +177,7 @@ def extract_and_transform_table(file_path):
         labHours = row[7].strip()
         schedule = row[8].strip().replace('\n', ' ')
         room = row[9].replace('\n', ' ').strip()
+        noOfStudents = row[10].strip()
         schedule_details = parse_schedule(schedule)
         days = " ".join(sorted(set(item['day'] for item in schedule_details)))
 
@@ -190,7 +191,8 @@ def extract_and_transform_table(file_path):
             "lab_units": labUnits,
             "lec_hours": lecHours,
             "lab_hours": labHours,
-            "schedule": schedule_details
+            "schedule": schedule_details,
+            "no_of_students": noOfStudents,
         }
         result.append(course)
 

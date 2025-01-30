@@ -18,6 +18,10 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 # Utility to check if file is PDF
 
 
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
 def preprocess_schedule_text(schedule_text):
     """
     Preprocess schedule_text to correct minor formatting errors and normalize to

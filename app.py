@@ -194,9 +194,9 @@ def extract_and_transform_table(pdf_path):
             full_schedule = " ".join(combined_schedule_parts).strip()
 
             # Parse only if there's a valid schedule
+
             schedule = parse_schedule(full_schedule) if full_schedule else []
-            print("full sched", full_schedule)
-            schedule = parse_schedule(full_schedule) if full_schedule else []
+            days = " ".join(sorted(set(item['day'] for item in schedule)))
             course = {
                 "schedule_id": schedule_id,
                 "subject_code": row[2].strip(),
@@ -208,6 +208,7 @@ def extract_and_transform_table(pdf_path):
                 "hr_per_sem": row[8].strip(),
                 "section": row[9].strip(),
                 "schedule": schedule,
+                "days": days,
                 # Assuming 'Room' is in column 10
                 "room": row[12].replace('\n', ' ').strip(),
                 # Assuming 'Total Students' is in column 11

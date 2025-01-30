@@ -200,7 +200,7 @@ def extract_and_transform_table(pdf_path):
             course = {
                 "schedule_id": schedule_id,
                 "subject_code": row[2].strip(),
-                "subject_title": row[3].replace('\n', ' '),
+                "subject": row[3].replace('\n', ' '),
                 "subject_credit": row[4].strip(),
                 "faculty_credit": row[5].strip(),
                 "college_code": row[6].strip(),

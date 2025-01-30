@@ -160,7 +160,7 @@ def extract_and_transform_table(pdf_path):
 
     result = []
     total_subject_credit = ''
-    totalFacultyCredit = ''
+    total_faculty_credit = ''
     all_total_students = ''
     for _, row in data_rows.iterrows():
         if row[1] != "" and row[2].strip() != "" and row[3].strip() != "":
@@ -170,8 +170,6 @@ def extract_and_transform_table(pdf_path):
             schedule_id = row[1].strip()
             schedule_id = re.sub(r'^\d+\.\s*', '', schedule_id)
 
-            days = " ".join(sorted(set(item['day']
-                            for item in schedule_details)))
             # Use regex to split on one or more successive newlines (\n+)
             schedule_parts_1 = re.split(
                 r'\n+', row[10].strip()) if row[10].strip() else []

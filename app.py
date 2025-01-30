@@ -18,12 +18,6 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 # Utility to check if file is PDF
 
 
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-# Schedule parsing function
-
-
 def preprocess_schedule_text(schedule_text):
     """
     Preprocess schedule_text to correct minor formatting errors and normalize to
@@ -44,7 +38,7 @@ def preprocess_schedule_text(schedule_text):
     schedule_text = re.sub(r'(\d)-(\d)', r'\1 - \2', schedule_text)
 
     # Match and format the day and time range (with space in time)
-    pattern = r"([A-Z]+)\s*(\d{1,2}:\d{2}\s*[APap][Mm]\s*-\s*\d{1,2}:\d{2}\s*[APap][Mm])"
+    pattern = r"([A-Z]+)\s*(\d{1,2}:\d{2}\s*[APap][Mm]\s* - \s*\d{1,2}:\d{2}\s*[APap][Mm])"
     match = re.match(pattern, schedule_text)
     if match:
         days, times = match.groups()
@@ -57,42 +51,37 @@ def preprocess_schedule_text(schedule_text):
 def split_same_time_diff_day(schedule_text: str) -> list:
     """
     Splits a schedule string into separate schedules if multiple days are present with the same time.
-    For example:
-        "TTH 9:30 AM-12:00 PM" -> ["T 9:30 AM-12:00 PM", "TH 9:30 AM-12:00 PM"]
+    Allows handling of 'TH' and 'Th'.
     """
-    # Preprocess to normalize spacing
-    # Normalize extra spaces
-    schedule_text = re.sub(r'\s+', ' ', schedule_text.strip())
-
-    # Updated regex to allow flexible spacing
-    pattern = r"([A-Z]+)\s+(\d{1,2}:\d{2}\s*[APap][Mm]\s*-\s*\d{1,2}:\d{2}\s*[APap][Mm])"
+    schedule_text = re.sub(
+        r'\s+', ' ', schedule_text.strip())  # Normalize spaces
+    pattern = r"(?i)([A-Z]+)\s+(\d{1,2}:\d{2}\s*[APap][Mm]\s* - \s*\d{1,2}:\d{2}\s*[APap][Mm])"
 
     match = re.match(pattern, schedule_text)
     if not match:
-        return [schedule_text.strip()]  # If no match, return input as is
+        return [schedule_text.strip()]
 
-    # Split match groups
     days, times = match.groups()
+    days = days.upper()  # Normalize case
 
-    # Break days into individual days (e.g., TTH -> T, TH)
     day_mapping = {
-        "M": "M", "T": "T", "W": "W", "R": "TH", "F": "F",
-        "S": "S", "U": "SU"  # Add any additional mappings as needed
+        "M": "M", "T": "T", "W": "W", "R": "Th", "F": "F",
+        "S": "S", "U": "SU"
     }
+
     individual_days = []
     i = 0
     while i < len(days):
-        # Handle "TH" (two-character day)
-        if days[i] == "T" and i + 1 < len(days) and days[i + 1] == "H":
-            individual_days.append(day_mapping["R"])  # Map "TH"
-            i += 2  # Skip "H"
+        # Handle TH/Th
+        if days[i] == "T" and i + 1 < len(days) and days[i + 1] in "Hh":
+            individual_days.append(day_mapping["R"])
+            i += 2
         else:
-            individual_days.append(day_mapping.get(days[i], days[i]))
+            individual_days.append(day_mapping.get(
+                days[i].upper(), days[i].upper()))
             i += 1
 
-    # Combine each day with the time range
-    schedules = [f"{day} {times}" for day in individual_days]
-    return schedules
+    return [f"{day} {times}" for day in individual_days]
 
 
 def split_two_schedules(schedule: str) -> list:
@@ -117,11 +106,11 @@ def parse_schedule(schedule_text):
     print("Split schedule into parts:", schedule_parts)  # Debugging output
 
     # Regex pattern to match day and time (e.g., "F 7:30 AM-10:00 AM")
-    pattern = r'([A-Z]+)\s+(\d{1,2}:\d{2})\s?(AM|PM)?\s*-\s*(\d{1,2}:\d{2})\s?(AM|PM)?'
+    pattern = r'(?i)([A-Z]+)\s+(\d{1,2}:\d{2})\s?(AM|PM)?\s* - \s*(\d{1,2}:\d{2})\s?(AM|PM)?'
 
     for index, part in enumerate(schedule_parts):
         schedule_parts[index] = preprocess_schedule_text(part)
-        print(preprocess_schedule_text(part))
+        print("Preprocessed Part:", preprocess_schedule_text(part))
     if len(schedule_parts) == 1:
         print(schedule_parts)
         schedule_parts = split_same_time_diff_day(schedule_parts[0])
@@ -145,13 +134,11 @@ def parse_schedule(schedule_text):
 
     return days_times
 
-# Table extraction and parsing function
 
-
-def extract_and_transform_table(file_path):
+def extract_and_transform_table(pdf_path):
     # Extract tables using both lattice and stream methods
-    tables_lattice = camelot.read_pdf(file_path, flavor='lattice', pages='all')
-    tables_stream = camelot.read_pdf(file_path, flavor='stream', pages='all')
+    tables_lattice = camelot.read_pdf(pdf_path, flavor='lattice', pages='all')
+    tables_stream = camelot.read_pdf(pdf_path, flavor='stream', pages='all')
 
     # Combine both TableLists
     all_tables = []
@@ -159,44 +146,85 @@ def extract_and_transform_table(file_path):
     all_tables.extend(tables_stream)
 
     if len(all_tables) == 0:
-        return {"error": "No tables found"}
+        print("No tables found.")
+        return
 
+    print(f"Total Tables Detected: {len(all_tables)}")
+
+    # Use the first detected table (Table 1)
     table = all_tables[0].df
+
+    # Extract header and rows
     headers = table.iloc[0].tolist()
     data_rows = table.iloc[1:]
 
     result = []
-
+    total_subject_credit = ''
+    totalFacultyCredit = ''
+    all_total_students = ''
     for _, row in data_rows.iterrows():
-        subject_code = row[1].strip()
-        subject = row[2].replace('\n', ' ')
-        section = row[3].strip()
-        lecUnits = row[4].strip()
-        labUnits = row[5].strip()
-        lecHours = row[6].strip()
-        labHours = row[7].strip()
-        schedule = row[8].strip().replace('\n', ' ')
-        room = row[9].replace('\n', ' ').strip()
-        noOfStudents = row[10].strip()
-        schedule_details = parse_schedule(schedule)
-        days = " ".join(sorted(set(item['day'] for item in schedule_details)))
+        if row[1] != "" and row[2].strip() != "" and row[3].strip() != "":
+            print(f"Row columns: {len(row)} | Data: {row.tolist()}")
 
-        course = {
-            "subject_code": subject_code,
-            "subject": subject,
-            "section": section,
-            "room": room,
-            "days": days,
-            "lec_units": lecUnits,
-            "lab_units": labUnits,
-            "lec_hours": lecHours,
-            "lab_hours": labHours,
-            "schedule": schedule_details,
-            "no_of_students": noOfStudents,
-        }
-        result.append(course)
+            # Map row data to the required JSON fields
+            schedule_id = row[1].strip()
+            schedule_id = re.sub(r'^\d+\.\s*', '', schedule_id)
 
-    return result
+            days = " ".join(sorted(set(item['day']
+                            for item in schedule_details)))
+            # Use regex to split on one or more successive newlines (\n+)
+            schedule_parts_1 = re.split(
+                r'\n+', row[10].strip()) if row[10].strip() else []
+            schedule_parts_2 = re.split(
+                r'\n+', row[11].strip()) if row[11].strip() else []
+
+            # Ensure both lists have the same length by padding with empty strings
+            max_len = max(len(schedule_parts_1), len(schedule_parts_2))
+            schedule_parts_1 += [""] * (max_len - len(schedule_parts_1))
+            schedule_parts_2 += [""] * (max_len - len(schedule_parts_2))
+
+            # Pair corresponding elements together (aligning days with times)
+            combined_schedule_parts = [
+                f"{schedule_parts_1[i]} {schedule_parts_2[i]}".strip() for i in range(max_len)
+            ]
+
+            # Construct full schedule string
+            full_schedule = " ".join(combined_schedule_parts).strip()
+
+            # Parse only if there's a valid schedule
+            schedule = parse_schedule(full_schedule) if full_schedule else []
+            print("full sched", full_schedule)
+            schedule = parse_schedule(full_schedule) if full_schedule else []
+            course = {
+                "schedule_id": schedule_id,
+                "subject_code": row[2].strip(),
+                "subject_title": row[3].replace('\n', ' '),
+                "subject_credit": row[4].strip(),
+                "faculty_credit": row[5].strip(),
+                "college_code": row[6].strip(),
+                "hr_per_week": row[7].strip(),
+                "hr_per_sem": row[8].strip(),
+                "section": row[9].strip(),
+                "schedule": schedule,
+                # Assuming 'Room' is in column 10
+                "room": row[12].replace('\n', ' ').strip(),
+                # Assuming 'Total Students' is in column 11
+                "total_students": row[13].strip()
+            }
+            result.append(course)
+        else:
+            total_subject_credit = row[4].strip()
+            total_faculty_credit = row[5].strip()
+            all_total_students = row[13].strip()
+
+    data = {
+        "total_subject_credit": total_subject_credit,
+        "total_faculty_credit": total_faculty_credit,
+        "all_total_students": all_total_students,
+        "schedule": result,
+    }
+
+    return data
 
 # Flask route to handle PDF upload
 

@@ -1,0 +1,29 @@
+# Use official Python base image
+FROM python:3.9
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    tesseract-ocr \
+    tesseract-ocr-eng \
+    libtesseract-dev \
+    poppler-utils \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set Tesseract environment variable
+ENV TESSDATA_PREFIX=/usr/share/tesseract-ocr/4.00/tessdata
+
+# Copy requirements and install dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application files
+COPY . .
+
+# Expose port for Flask
+EXPOSE 8000
+
+# Run Gunicorn with multiple workers
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "app:app"]

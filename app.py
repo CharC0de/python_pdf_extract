@@ -325,29 +325,28 @@ def extract_and_transform_table(pdf_path):
             total_faculty_credit = row[5].strip()
             all_total_students = row[13].strip()
 
-        # extracted_text = extract_text_from_pdf(pdf_path)
-        # details = extract_teacher_details(extracted_text)
-        # credit_and_load = extract_faculty_credit_and_load(extracted_text)
-        # units = extract_key_values(extracted_text)
+        extracted_text = extract_text_from_pdf(pdf_path)
+        details = extract_teacher_details(extracted_text)
+        credit_and_load = extract_faculty_credit_and_load(extracted_text)
+        units = extract_key_values(extracted_text)
 
     data = {
         "message":"success",
+         "details": details,
         "total_subject_credit": total_subject_credit,
         "total_faculty_credit": total_faculty_credit,
         "total_weekly_hours": row[7].strip(),
         "all_total_students": all_total_students,
         "schedule": result,
-        # "details": details,
-        # "credit_and_load": credit_and_load,
-        # "units": units
+        "credit_and_load": credit_and_load,
+        "units": units
     }
 
     return data
 
 # Flask route to handle PDF upload
-@app.route('/upload', methods=['GET'])
-def upload_page():
-    return jsonify({"error": "POST ONLY"}), 500
+
+
 @app.route('/upload', methods=['POST'])
 def upload_pdf():
     if 'file' not in request.files:

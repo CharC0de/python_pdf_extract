@@ -112,8 +112,6 @@ def extract_and_transform_table(pdf_path):
 
         data = {
             "schedule": result,
-            "details": details,
-            "credit_and_load": credit_and_load
         }
 
         return data

@@ -331,7 +331,7 @@ def extract_and_transform_table(pdf_path):
         units = extract_key_values(extracted_text)
 
     data = {
-        "text":extracted_text,
+        "message":"success",
         "total_subject_credit": total_subject_credit,
         "total_faculty_credit": total_faculty_credit,
         "total_weekly_hours": row[7].strip(),

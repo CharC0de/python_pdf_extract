@@ -37,15 +37,21 @@ def extract_teacher_details(text):
     teacher_details = {}
 
     # Normalize text
-    cleaned_text = re.sub(r'\n+', ' ', text).strip()
+    cleaned_text = re.sub(r'\n+', ' ', text)  # Remove excessive newlines
+    cleaned_text = re.sub(r'\s+', ' ', cleaned_text).strip()  # Normalize spaces
+    cleaned_text = re.sub(r' :', ':', cleaned_text)  # Handle OCR formatting issues
 
-    # Regex patterns for extracting details
+    # Print cleaned text for debugging (Optional)
+    # print(cleaned_text)
+
+    # Updated regex patterns
     patterns = {
         "faculty_name": r"Faculty Name\s*:?\s*([\w\s\.\-]+?)(?=\s+Designation)",
         "rank": r"Rank\s*:?\s*([\w\s\d]+)(?=\s+Status|Major Discipline)",
         "major_discipline": r"Major Discipline\s*:?\s*([\w\s]+)(?=\s+Email Address|$)",
         "designation": r"Designation\s*:?\s*([\w\s\d]+)(?=\s+Rank|Status)",
         "status": r"Status\s*:?\s*([\w\s-]+)(?=\s+Email Address|Major Discipline|$)",
+        # Improved email regex: allows extra spaces, captures full email correctly
         "email_address": r"Email Address\s*:?\s*(?:\S*\s+)*([\w.-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})",
         "campus_college": r"COLLEGE OF\s*([\w\s]+?)\s*FACULTY LOAD"
     }
@@ -53,7 +59,13 @@ def extract_teacher_details(text):
     # Extract using regex
     for key, pattern in patterns.items():
         match = re.search(pattern, cleaned_text, re.IGNORECASE)
-        teacher_details[key] = match.group(1).strip() if match else "Not Found"
+        if match:
+            value = match.group(1).strip()
+            if key == "email_address":
+                value = value.replace(" ", "")  # Remove any extra spaces in emails
+            teacher_details[key] = value
+        else:
+            teacher_details[key] = "Not Found"
 
     return teacher_details
 

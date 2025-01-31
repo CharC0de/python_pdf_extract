@@ -7,11 +7,7 @@ import camelot
 import re
 import os
 from werkzeug.utils import secure_filename
-!pip install pytesseract
-!apt-get install poppler-utils
-!apt install tesseract-ocr
-!pip install pymupdf - -no-cache-dir
-!pip install pdf2image
+
 
 
 # Initialize Flask App

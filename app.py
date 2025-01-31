@@ -54,7 +54,7 @@ def extract_teacher_details(text):
         "designation": r"Designation\s*:?\s*([\w\s\d]+)(?=\s+Rank|Status)",
         "status": r"Status\s*:?\s*([\w\s-]+)(?=\s+Email Address|Major Discipline|$)",
         # Improved email regex: allows extra spaces, captures full email correctly
-        "email_address": r"Email Address\s*:?\s*(?:\S*\s+)*([\w.-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})",
+        "email_address": r"Email Address\s*:?.*?([\w.-]+\s*@\s*[\w.-]+\s*\.\s*[a-zA-Z]{2,})",
         "campus_college": r"COLLEGE OF\s*([\w\s]+?)\s*FACULTY LOAD"
     }
 
@@ -82,8 +82,10 @@ def extract_faculty_credit_and_load(text):
 
     # Regex patterns
     patterns = {
-        "faculty_credit": r"FACULTY CREDIT [-\s]+(\d+(\.\d+)?)",
-        "designation_load_released": r"DESIGNATION, LOAD RELEASED [-\s]+(\d+(\.\d+)?)"
+        "faculty_credit": r"FACULTY CREDIT[^\d]*(\d+\.?\d*)",
+        "designation_load_released": r"DESIGNATION, LOAD RELEASED[^\d]*(\d+\.?\d*)"
+
+
     }
 
     # Extract values

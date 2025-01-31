@@ -39,10 +39,8 @@ def extract_teacher_details(text):
 
     # Normalize text
     cleaned_text = re.sub(r'\n+', ' ', text)  # Remove excessive newlines
-    cleaned_text = re.sub(
-        r'\s+', ' ', cleaned_text).strip()  # Normalize spaces
-    # Handle OCR formatting issues
-    cleaned_text = re.sub(r' :', ':', cleaned_text)
+    cleaned_text = re.sub(r'\s+', ' ', cleaned_text).strip()  # Normalize spaces
+    cleaned_text = re.sub(r' :', ':', cleaned_text)  # Handle OCR formatting issues
 
     # Print cleaned text for debugging (Optional)
     # print(cleaned_text)
@@ -65,15 +63,12 @@ def extract_teacher_details(text):
         if match:
             value = match.group(1).strip()
             if key == "email_address":
-                # Remove any extra spaces in emails
-                value = value.replace(" ", "")
+                value = value.replace(" ", "")  # Remove any extra spaces in emails
             teacher_details[key] = value
         else:
             teacher_details[key] = "Not Found"
 
     return teacher_details
-
-
 def extract_faculty_credit_and_load(text):
     """Extracts faculty credit and designation load released from the OCR text."""
     faculty_load_details = {}

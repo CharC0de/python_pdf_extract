@@ -151,7 +151,9 @@ def upload_pdf():
         # Clean up uploaded file
         if os.path.exists(file_path):
             os.remove(file_path)
-
+@app.route('/test', methods=['POST'])
+def test_route():
+     return jsonify({"message":"working as intended"}), 200
 
 # Run Flask App
 if __name__ == "__main__":

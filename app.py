@@ -345,8 +345,9 @@ def extract_and_transform_table(pdf_path):
     return data
 
 # Flask route to handle PDF upload
-
-
+@app.route('/upload', methods=['GET'])
+def upload_pdf():
+    return jsonify({"error": "POST ONLY"}), 500
 @app.route('/upload', methods=['POST'])
 def upload_pdf():
     if 'file' not in request.files:

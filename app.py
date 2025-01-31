@@ -7,7 +7,7 @@ import camelot
 import re
 import os
 from werkzeug.utils import secure_filename
-
+# pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
 # Initialize Flask App
 app = Flask(__name__)
@@ -333,9 +333,9 @@ def extract_and_transform_table(pdf_path):
         details = extract_teacher_details(extracted_text)
         credit_and_load = extract_faculty_credit_and_load(extracted_text)
         units = extract_key_values(extracted_text)
-
+        print("Working")
     data = {
-        "message": "success",
+        "Amessage": "success",
         "total_subject_credit": total_subject_credit,
         "total_faculty_credit": total_faculty_credit,
         "total_weekly_hours": row[7].strip(),

@@ -9,7 +9,6 @@ import os
 from werkzeug.utils import secure_filename
 
 
-
 # Initialize Flask App
 app = Flask(__name__)
 
@@ -39,8 +38,10 @@ def extract_teacher_details(text):
 
     # Normalize text
     cleaned_text = re.sub(r'\n+', ' ', text)  # Remove excessive newlines
-    cleaned_text = re.sub(r'\s+', ' ', cleaned_text).strip()  # Normalize spaces
-    cleaned_text = re.sub(r' :', ':', cleaned_text)  # Handle OCR formatting issues
+    cleaned_text = re.sub(
+        r'\s+', ' ', cleaned_text).strip()  # Normalize spaces
+    # Handle OCR formatting issues
+    cleaned_text = re.sub(r' :', ':', cleaned_text)
 
     # Print cleaned text for debugging (Optional)
     # print(cleaned_text)
@@ -63,12 +64,15 @@ def extract_teacher_details(text):
         if match:
             value = match.group(1).strip()
             if key == "email_address":
-                value = value.replace(" ", "")  # Remove any extra spaces in emails
+                # Remove any extra spaces in emails
+                value = value.replace(" ", "")
             teacher_details[key] = value
         else:
             teacher_details[key] = "Not Found"
 
     return teacher_details
+
+
 def extract_faculty_credit_and_load(text):
     """Extracts faculty credit and designation load released from the OCR text."""
     faculty_load_details = {}
@@ -331,13 +335,13 @@ def extract_and_transform_table(pdf_path):
         units = extract_key_values(extracted_text)
 
     data = {
-        "message":"success",
-         "details": details,
+        "message": "success",
         "total_subject_credit": total_subject_credit,
         "total_faculty_credit": total_faculty_credit,
         "total_weekly_hours": row[7].strip(),
         "all_total_students": all_total_students,
         "schedule": result,
+        "details": details,
         "credit_and_load": credit_and_load,
         "units": units
     }
